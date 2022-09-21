@@ -1,11 +1,10 @@
-import tkinter as tk
-import cv2
-import PIL.Image, PIL.ImageTk
-
-import numpy as np
 import pickle
-
+import tkinter as tk
 from tkinter import ttk
+
+import PIL.Image
+import PIL.ImageTk
+import cv2
 
 LARGE_FONT = ("Verdana", 12)
 
@@ -15,22 +14,19 @@ class AutoryzacjaApp(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
+        # Setting icon, title and initializing GUI
         tk.Tk.iconbitmap(self, default="icon.ico")
         tk.Tk.wm_title(self, "Aplikacja auroryzacji za pomocą rozponawania twarzy")
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True, padx=100, pady=50)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
-
         self.frames = {}
 
         for F in (EkranStartowy, EkranGlowny, EkranRejestracja):
             frame = F(container, self)
-
             self.frames[F] = frame
-
             frame.grid(row=0, column=0, sticky="nsew")
-
         self.show_frame(EkranStartowy)
 
     def show_frame(self, cont):
@@ -42,6 +38,8 @@ class EkranStartowy(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+
+        # loading image and putting it on the canvas
         self.cv_img = cv2.cvtColor(cv2.imread("obraz.jpg"), cv2.COLOR_BGR2RGB)
         self.height, self.width, no_channels = self.cv_img.shape
         self.canvas = tk.Canvas(self, width=self.width, height=self.height)
@@ -49,9 +47,10 @@ class EkranStartowy(tk.Frame):
         self.photo = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(self.cv_img))
         self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
 
+        # creating label and buttons
+        # TO DO: PUT LABEL IN TK.FRAME SO IT DOESN'T HAVE TO BE CREATED HERE
         label = tk.Label(self, text="Praca inżynierska \n Jakub Grobelny", font=LARGE_FONT)
         label.pack()
-
         btn = ttk.Button(self, text="start", command=lambda: controller.show_frame(EkranGlowny))
         btn.pack()
 
@@ -60,7 +59,9 @@ class EkranGlowny(tk.Frame):
 
     def __init__(self, parent, controller, video_source=0):
         tk.Frame.__init__(self, parent)
+
         # init cam and recognizer
+        self.image = None
         self.vid = cv2.VideoCapture(video_source, cv2.CAP_DSHOW)
         self.face_cascade = cv2.CascadeClassifier('cascades/data/haarcascade_frontalface_alt2.xml')
         self.recognizer = cv2.face.LBPHFaceRecognizer_create()
@@ -92,7 +93,6 @@ class EkranGlowny(tk.Frame):
         gray = cv2.cvtColor(vid_frame, cv2.COLOR_BGR2GRAY)
         faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.5, minNeighbors=3)
         for (x, y, w, h) in faces:
-
             roi_gray = gray[y:y + h, x:x + w]
             id_, conf = self.recognizer.predict(roi_gray)
             if conf >= 70:
@@ -100,8 +100,6 @@ class EkranGlowny(tk.Frame):
                 print(labels[id_])
             color = (255, 0, 0)
             stroke = 2
-            # width = x + w
-            # height = y + h
             end_cord_x = x + w
             end_cord_y = y + h
             cv2.rectangle(vid_frame, (x, y), (end_cord_x, end_cord_y), color, stroke)
@@ -115,6 +113,7 @@ class EkranGlowny(tk.Frame):
         self.image = cv2.cvtColor(vid_frame, cv2.COLOR_BGR2RGB)  # to RGB
         self.image = PIL.Image.fromarray(self.image)  # to PIL format
         self.image = PIL.ImageTk.PhotoImage(self.image)  # to ImageTk format
+
         # Update image
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.image)
         # Repeat every 'interval' ms
@@ -122,13 +121,21 @@ class EkranGlowny(tk.Frame):
 
 
 class EkranRejestracja(tk.Frame):
-
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+
+        # creating label and buttons
+        # TO DO: PUT LABEL IN TK.FRAME SO IT DOESN'T HAVE TO BE CREATED HERE
         label = tk.Label(self, text="e3", font=LARGE_FONT)
         label.pack()
         btn = ttk.Button(self, text="cofnij", command=lambda: controller.show_frame(EkranGlowny))
         btn.pack()
+
+        # TO DO: CREATE FUNCTION OF ADDING NEW USER
+        #   ADD WIDGET FOR TEXT ENTRY
+        #   CREATE NEW FOLDER
+        #   SAVE PHOTOS FROM CAMERA OR CHOSE FILES FROM FILE EXPLORER
+        #   SET ACCESS LEVEL
 
 
 app = AutoryzacjaApp()
