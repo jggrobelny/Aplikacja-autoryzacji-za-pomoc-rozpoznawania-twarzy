@@ -48,7 +48,6 @@ class EkranStartowy(tk.Frame):
         self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
 
         # creating label and buttons
-        # TO DO: PUT LABEL IN TK.FRAME SO IT DOESN'T HAVE TO BE CREATED HERE
         label = tk.Label(self, text="Praca inżynierska \n Jakub Grobelny", font=LARGE_FONT)
         label.pack()
         btn = ttk.Button(self, text="start", command=lambda: controller.show_frame(EkranGlowny))
@@ -95,19 +94,29 @@ class EkranGlowny(tk.Frame):
         for (x, y, w, h) in faces:
             roi_gray = gray[y:y + h, x:x + w]
             id_, conf = self.recognizer.predict(roi_gray)
-            if conf >= 70:
-                print(id_)
-                print(labels[id_])
-            color = (255, 0, 0)
+            if 35 <= conf <= 65:
+                #print(id_)
+                #print(labels[id_])
+                name = labels[id_]
+                color = (0, 255, 0)  # green
+            else:
+                name = "Unknown"
+                color = (0, 0, 255)  # red
+
+            # TO DO: gaining access
+            #prev_id_ = id_
+
+            # drawing rectangle around detected face
             stroke = 2
             end_cord_x = x + w
             end_cord_y = y + h
             cv2.rectangle(vid_frame, (x, y), (end_cord_x, end_cord_y), color, stroke)
             font = cv2.FONT_HERSHEY_SIMPLEX
-            name = labels[id_]
-            color = (255, 255, 255)
+
+            # labeling the face
+            color = (0, 0, 0)  # black
             stroke = 2
-            cv2.putText(vid_frame, name, (x, y), font, 1, color, stroke, cv2.LINE_AA)
+            cv2.putText(vid_frame, name, (x, y), font, 2, color, stroke, cv2.LINE_AA)
 
         # Get the latest frame and convert image format
         self.image = cv2.cvtColor(vid_frame, cv2.COLOR_BGR2RGB)  # to RGB
@@ -125,7 +134,6 @@ class EkranRejestracja(tk.Frame):
         tk.Frame.__init__(self, parent)
 
         # creating label and buttons
-        # TO DO: PUT LABEL IN TK.FRAME SO IT DOESN'T HAVE TO BE CREATED HERE
         label = tk.Label(self, text="e3", font=LARGE_FONT)
         label.pack()
         btn = ttk.Button(self, text="cofnij", command=lambda: controller.show_frame(EkranGlowny))
@@ -134,7 +142,7 @@ class EkranRejestracja(tk.Frame):
         # TO DO: CREATE FUNCTION OF ADDING NEW USER
         #   ADD WIDGET FOR TEXT ENTRY
         #   CREATE NEW FOLDER
-        #   SAVE PHOTOS FROM CAMERA OR CHOSE FILES FROM FILE EXPLORER
+        #   SAVE PHOTOS FROM CAMERA OR CHOOSE FILES FROM FILE EXPLORER
         #   SET ACCESS LEVEL
 
 
