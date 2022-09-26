@@ -59,16 +59,24 @@ class EkranGlowny(tk.Frame):
     def __init__(self, parent, controller, video_source=0):
         tk.Frame.__init__(self, parent)
 
+        # validation variables
+        self.validation_count = 0
+        self.id_validation = False
+        # TODO: validation images
+        # TODO: auth_img = tk.PhotoImage(file=auth_img_path)
+        # TODO: self.cv_img2 = cv2.cvtColor(cv2.imread(auth_img_path), cv2.COLOR_BGR2RGB)
+
         # init cam and recognizer
-        self.image = None
         self.vid = cv2.VideoCapture(video_source, cv2.CAP_DSHOW)
         self.face_cascade = cv2.CascadeClassifier('cascades/data/haarcascade_frontalface_alt2.xml')
         self.recognizer = cv2.face.LBPHFaceRecognizer_create()
         self.recognizer.read("trainer.yml")
+        # TODO: OGARNAC WRZUCANIE OBRAZOW AUTORYZACJI -> CANVAS? -> LABEL? MOZE ZMIENIC ROZMIAR CANVAS I OKNA IDK //////
 
         # refresh interval
         self.interval = 20
         self.canvas = tk.Canvas(self, width=600, height=400)
+        # self.canvas.create_image(1, 1, image=auth_img, anchor="s")
         self.canvas.pack()
         self.update_image()
 
@@ -81,7 +89,8 @@ class EkranGlowny(tk.Frame):
 
     def update_image(self):
 
-        # loading lables
+        # loading labels
+        global color
         labels = {"persons_name": 1}
         with open("pickles/labels.pickle", 'rb') as f:
             og_labels = pickle.load(f)
@@ -94,17 +103,25 @@ class EkranGlowny(tk.Frame):
         for (x, y, w, h) in faces:
             roi_gray = gray[y:y + h, x:x + w]
             id_, conf = self.recognizer.predict(roi_gray)
+
+            # face is recognized
             if 35 <= conf <= 65:
-                #print(id_)
-                #print(labels[id_])
                 name = labels[id_]
-                color = (0, 255, 0)  # green
+                self.validation_count += 1
+
+                # validating if in 10 tries user gets access with no bad matches
+                if not self.id_validation:
+                    color = (30, 255, 255)  # yellow
+                if self.validation_count > 10:
+                    color = (0, 255, 0)  # green
+                    self.id_validation = True
+
+            # no match with database
             else:
                 name = "Unknown"
                 color = (0, 0, 255)  # red
-
-            # TO DO: gaining access
-            #prev_id_ = id_
+                self.validation_count = 0
+                self.id_validation = False
 
             # drawing rectangle around detected face
             stroke = 2
@@ -118,6 +135,14 @@ class EkranGlowny(tk.Frame):
             stroke = 2
             cv2.putText(vid_frame, name, (x, y), font, 2, color, stroke, cv2.LINE_AA)
 
+        # validation TODO: FINISH THIS PART below works but need to implement photo for those etc
+        if self.id_validation:
+            # auth_img_path = "autoryzacja_udana.jpg"
+            print("test_auth")
+        else:
+            print("no auth")
+            # auth_img_path = "autoryzacja_nieudana.jpg"
+
         # Get the latest frame and convert image format
         self.image = cv2.cvtColor(vid_frame, cv2.COLOR_BGR2RGB)  # to RGB
         self.image = PIL.Image.fromarray(self.image)  # to PIL format
@@ -125,6 +150,7 @@ class EkranGlowny(tk.Frame):
 
         # Update image
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.image)
+
         # Repeat every 'interval' ms
         self.canvas.after(self.interval, self.update_image)
 
@@ -134,12 +160,13 @@ class EkranRejestracja(tk.Frame):
         tk.Frame.__init__(self, parent)
 
         # creating label and buttons
+        # TO DO: PUT LABEL IN TK.FRAME SO IT DOESN'T HAVE TO BE CREATED HERE
         label = tk.Label(self, text="e3", font=LARGE_FONT)
         label.pack()
         btn = ttk.Button(self, text="cofnij", command=lambda: controller.show_frame(EkranGlowny))
         btn.pack()
 
-        # TO DO: CREATE FUNCTION OF ADDING NEW USER
+        # TODO: CREATE FUNCTION OF ADDING NEW USER
         #   ADD WIDGET FOR TEXT ENTRY
         #   CREATE NEW FOLDER
         #   SAVE PHOTOS FROM CAMERA OR CHOOSE FILES FROM FILE EXPLORER
