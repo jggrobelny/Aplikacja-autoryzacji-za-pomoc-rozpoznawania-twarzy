@@ -1,0 +1,5 @@
+C:/Users/jakub/Desktop/pythonProj/inz/cascades/data/out/build/x64-Debug (domyślnie)/CMakeFiles/install/local.dir
+C:/Users/jakub/Desktop/pythonProj/inz/cascades/data/out/build/x64-Debug (domyślnie)/CMakeFiles/install.dir
+C:/Users/jakub/Desktop/pythonProj/inz/cascades/data/out/build/x64-Debug (domyślnie)/CMakeFiles/edit_cache.dir
+C:/Users/jakub/Desktop/pythonProj/inz/cascades/data/out/build/x64-Debug (domyślnie)/CMakeFiles/rebuild_cache.dir
+C:/Users/jakub/Desktop/pythonProj/inz/cascades/data/out/build/x64-Debug (domyślnie)/CMakeFiles/list_install_components.dir
