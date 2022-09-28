@@ -72,18 +72,20 @@ class EkranGlowny(tk.Frame):
         self.recognizer = cv2.face.LBPHFaceRecognizer_create()
         self.recognizer.read("trainer.yml")
 
+        # Creating label and button
+        label = tk.Label(self, text="W celu autoryzacji przybliż twarz i zaczekaj aż żółta ramka zmieni kolor na zieloną", font=LARGE_FONT)
+        label.pack()
+        self.btn_rej = ttk.Button(self, text="Zarejestruj nowa osobe",
+                                  command=lambda: controller.show_frame(EkranRejestracja))
+
+
         # Refresh interval
         self.interval = 20
         self.canvas = tk.Canvas(self, width=900, height=400)
         self.canvas.pack()
         self.update_image()
+        self.btn_rej.pack()
 
-        # Creating label and button
-        label = tk.Label(self, text="e2", font=LARGE_FONT)
-        label.pack()
-        btn_rej = ttk.Button(self, text="Zarejestruj nowa osobe",
-                             command=lambda: controller.show_frame(EkranRejestracja))
-        btn_rej.pack()
 
     def update_image(self):
 
@@ -106,10 +108,10 @@ class EkranGlowny(tk.Frame):
                 name = labels[id_]
                 self.validation_count += 1
 
-                # Validating if in 10 tries user gets access with no bad matches
+                # Validating if in 15 tries user gets recognized with no bad matches
                 if not self.id_validation:
                     color = (30, 255, 255)  # yellow
-                if self.validation_count > 10:
+                if self.validation_count > 15:
                     color = (0, 255, 0)  # green
                     self.id_validation = True
 
@@ -135,8 +137,10 @@ class EkranGlowny(tk.Frame):
         # Validation
         if self.id_validation:
             img_path = "autoryzacja_udana.png"
+            self.btn_rej["state"] = "enabled"
         else:
             img_path = "autoryzacja_nieudana.png"
+            self.btn_rej["state"] = "disabled"
 
         # Get the latest frame and convert image format
         self.image = cv2.cvtColor(vid_frame, cv2.COLOR_BGR2RGB)  # to RGB
