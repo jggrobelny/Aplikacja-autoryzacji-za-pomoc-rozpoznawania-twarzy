@@ -39,7 +39,7 @@ class EkranStartowy(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
 
-        # loading image and putting it on the canvas
+        # Loading image and putting it on the canvas
         self.cv_img = cv2.cvtColor(cv2.imread("obraz.jpg"), cv2.COLOR_BGR2RGB)
         self.height, self.width, no_channels = self.cv_img.shape
         self.canvas = tk.Canvas(self, width=self.width, height=self.height)
@@ -47,7 +47,7 @@ class EkranStartowy(tk.Frame):
         self.photo = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(self.cv_img))
         self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
 
-        # creating label and buttons
+        # Creating label and buttons
         label = tk.Label(self, text="Praca inżynierska \n Jakub Grobelny", font=LARGE_FONT)
         label.pack()
         btn = ttk.Button(self, text="start", command=lambda: controller.show_frame(EkranGlowny))
@@ -59,28 +59,26 @@ class EkranGlowny(tk.Frame):
     def __init__(self, parent, controller, video_source=0):
         tk.Frame.__init__(self, parent)
 
-        # validation variables
+        # Validation variables
         self.validation_count = 0
         self.id_validation = False
         # TODO: validation images
         # TODO: auth_img = tk.PhotoImage(file=auth_img_path)
         # TODO: self.cv_img2 = cv2.cvtColor(cv2.imread(auth_img_path), cv2.COLOR_BGR2RGB)
 
-        # init cam and recognizer
+        # Init cam and recognizer
         self.vid = cv2.VideoCapture(video_source, cv2.CAP_DSHOW)
         self.face_cascade = cv2.CascadeClassifier('cascades/data/haarcascade_frontalface_alt2.xml')
         self.recognizer = cv2.face.LBPHFaceRecognizer_create()
         self.recognizer.read("trainer.yml")
-        # TODO: OGARNAC WRZUCANIE OBRAZOW AUTORYZACJI -> CANVAS? -> LABEL? MOZE ZMIENIC ROZMIAR CANVAS I OKNA IDK //////
 
-        # refresh interval
+        # Refresh interval
         self.interval = 20
-        self.canvas = tk.Canvas(self, width=600, height=400)
-        # self.canvas.create_image(1, 1, image=auth_img, anchor="s")
+        self.canvas = tk.Canvas(self, width=900, height=400)
         self.canvas.pack()
         self.update_image()
 
-        # creating label and button
+        # Creating label and button
         label = tk.Label(self, text="e2", font=LARGE_FONT)
         label.pack()
         btn_rej = ttk.Button(self, text="Zarejestruj nowa osobe",
@@ -89,14 +87,13 @@ class EkranGlowny(tk.Frame):
 
     def update_image(self):
 
-        # loading labels
-        global color
+        # Loading labels
         labels = {"persons_name": 1}
         with open("pickles/labels.pickle", 'rb') as f:
             og_labels = pickle.load(f)
             labels = {v: k for k, v in og_labels.items()}
 
-        # reading camera and painting frame
+        # Reading camera and painting frame
         ret, vid_frame = self.vid.read()
         gray = cv2.cvtColor(vid_frame, cv2.COLOR_BGR2GRAY)
         faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.5, minNeighbors=3)
@@ -104,53 +101,53 @@ class EkranGlowny(tk.Frame):
             roi_gray = gray[y:y + h, x:x + w]
             id_, conf = self.recognizer.predict(roi_gray)
 
-            # face is recognized
+            # Face is recognized
             if 35 <= conf <= 65:
                 name = labels[id_]
                 self.validation_count += 1
 
-                # validating if in 10 tries user gets access with no bad matches
+                # Validating if in 10 tries user gets access with no bad matches
                 if not self.id_validation:
                     color = (30, 255, 255)  # yellow
                 if self.validation_count > 10:
                     color = (0, 255, 0)  # green
                     self.id_validation = True
 
-            # no match with database
+            # No match with database
             else:
                 name = "Unknown"
                 color = (0, 0, 255)  # red
                 self.validation_count = 0
                 self.id_validation = False
 
-            # drawing rectangle around detected face
+            # Drawing rectangle around detected face
             stroke = 2
             end_cord_x = x + w
             end_cord_y = y + h
             cv2.rectangle(vid_frame, (x, y), (end_cord_x, end_cord_y), color, stroke)
             font = cv2.FONT_HERSHEY_SIMPLEX
 
-            # labeling the face
+            # Labeling the face
             color = (0, 0, 0)  # black
             stroke = 2
             cv2.putText(vid_frame, name, (x, y), font, 2, color, stroke, cv2.LINE_AA)
 
-        # validation TODO: FINISH THIS PART below works but need to implement photo for those etc
+        # Validation
         if self.id_validation:
-            # auth_img_path = "autoryzacja_udana.jpg"
-            print("test_auth")
+            img_path = "autoryzacja_udana.png"
         else:
-            print("no auth")
-            # auth_img_path = "autoryzacja_nieudana.jpg"
+            img_path = "autoryzacja_nieudana.png"
 
         # Get the latest frame and convert image format
         self.image = cv2.cvtColor(vid_frame, cv2.COLOR_BGR2RGB)  # to RGB
         self.image = PIL.Image.fromarray(self.image)  # to PIL format
         self.image = PIL.ImageTk.PhotoImage(self.image)  # to ImageTk format
 
-        # Update image
+        # Update cam image
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.image)
-
+        # Create authorization pictures
+        self.auth_img = tk.PhotoImage(file=img_path)
+        self.canvas.create_image(650, 100, anchor=tk.NW, image=self.auth_img,)
         # Repeat every 'interval' ms
         self.canvas.after(self.interval, self.update_image)
 
@@ -160,7 +157,6 @@ class EkranRejestracja(tk.Frame):
         tk.Frame.__init__(self, parent)
 
         # creating label and buttons
-        # TO DO: PUT LABEL IN TK.FRAME SO IT DOESN'T HAVE TO BE CREATED HERE
         label = tk.Label(self, text="e3", font=LARGE_FONT)
         label.pack()
         btn = ttk.Button(self, text="cofnij", command=lambda: controller.show_frame(EkranGlowny))
@@ -171,6 +167,7 @@ class EkranRejestracja(tk.Frame):
         #   CREATE NEW FOLDER
         #   SAVE PHOTOS FROM CAMERA OR CHOOSE FILES FROM FILE EXPLORER
         #   SET ACCESS LEVEL
+        #   IMPLEMENT TRAIN.PY
 
 
 app = AutoryzacjaApp()
