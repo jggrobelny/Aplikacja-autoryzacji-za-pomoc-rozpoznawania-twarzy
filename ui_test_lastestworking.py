@@ -9,6 +9,24 @@ import cv2
 LARGE_FONT = ("Verdana", 12)
 
 
+#################################################################
+#                                                               #
+# TODO:         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv        #
+#                IMPLEMENT TAKING AND SAVING PICTURES           #
+#               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        #
+#                                                               #
+# TODO:         IMPLEMENT ADDING NEW USER                       #
+#                   MAKE BUTTON ACTIVE IF TEXT IS ENTERED       #
+#                   CREATE NEW FOLDER WITH USER'S NAME          #
+#                   IMPLEMENT TAKING PHOTOS OF USER FOR REG     #
+#                   ADD BUTTON FOR RUNNING TRAIN.PY             #
+#                   ADD INSTRUCTIONS                            #
+#                                                               #
+# TODO:         AFTER TAKING PHOTOS IMPLEMENT TRAIN.PY          #
+#               FIX CLOSING CV2 AFTER CLOSING APP               #
+#                                                               #
+#################################################################
+
 class AutoryzacjaApp(tk.Tk):
 
     def __init__(self, *args, **kwargs):
@@ -22,7 +40,10 @@ class AutoryzacjaApp(tk.Tk):
         tk.Tk.iconbitmap(self, default="icon.ico")
         tk.Tk.wm_title(self, "Aplikacja auroryzacji za pomocą rozponawania twarzy")
         container = tk.Frame(self)
-        container.pack(side="top", fill="both", expand=True, padx=100, pady=50)
+        container.pack(side="top", fill="both", expand=True)
+        container.grid_columnconfigure(0, weight=1)
+        container.grid_rowconfigure(0, weight=1)
+
         self.frames = {}
 
         for F in (EkranStartowy, EkranGlowny, EkranRejestracja):
@@ -43,6 +64,7 @@ class AutoryzacjaApp(tk.Tk):
         global key_reg, update_on_reg
         key_reg, update_on_reg = cont, cont
 
+
 class EkranStartowy(tk.Frame):
 
     def __init__(self, parent, controller):
@@ -58,8 +80,13 @@ class EkranStartowy(tk.Frame):
         # Creating label and buttons
         label = tk.Label(self, text="Praca inżynierska \n Jakub Grobelny", font=LARGE_FONT)
         label.pack()
-        btn = ttk.Button(self, text="start", command=lambda: [controller.show_frame(EkranGlowny),
-                                                              controller.key_switch(True)])
+        btn = ttk.Button(self, text="start", command=lambda: [controller.show_frame(EkranRejestracja),
+                                                              controller.key_switch(False),
+                                                              controller.key_switch_reg(True)])
+        # TODO: ABOVE IS TEMP FIX TO BYPASS MAIN SCREEN AND GO STRAIGHT INTO REG SCREEN // CPY BELOW TO RETURN TO NORMAL
+        # [controller.show_frame(EkranGlowny),
+        # controller.key_switch(True)]
+
         btn.pack()
 
 
@@ -95,7 +122,7 @@ class EkranGlowny(tk.Frame):
         # Looks for changes in global variable to update or to not update img
         # which avoids multiple cv2windows in background that create lags
         self.key_receiver()
-        self.btn_reg.pack()
+        self.btn_reg.place(relx=0.5, rely=0.9)
 
     def key_receiver(self):
         global key
@@ -164,7 +191,6 @@ class EkranGlowny(tk.Frame):
         self.image = PIL.Image.fromarray(self.image)  # to PIL format
         self.image = PIL.ImageTk.PhotoImage(self.image)  # to ImageTk format
 
-        print("Main Page cv is on")
         # Update cam image
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.image)
         # Create authorization pictures
@@ -181,19 +207,28 @@ class EkranRejestracja(tk.Frame):
 
         # creating label and buttons
         label = tk.Label(self, text="Ekran rejestracja", font=LARGE_FONT)
-        label.pack()
-        btn = ttk.Button(self, text="cofnij", command=lambda: [controller.show_frame(EkranGlowny),
-                                                               controller.key_switch(True),
-                                                               controller.key_switch_reg(False)])
-        btn.pack()
+        label.place(relx=0.5, rely=0.01)
+        btn_reg = ttk.Button(self, text="Stwórz nowego użytkownika")
+        btn_reg.place(relx=0.75, rely=0.5)  # TODO: ADD COMMAND
+        btn_back = ttk.Button(self, text="cofnij", command=lambda: [controller.show_frame(EkranGlowny),
+                                                                    controller.key_switch(True),
+                                                                    controller.key_switch_reg(False)])
+        btn_back.place(relx=0.5, rely=0.9)
+
+        # Text entry
+        name_entry = tk.Entry(self)
+        name_label = tk.Label(self, text="Imie i nazwisko", font=LARGE_FONT)
+        name_label.place(relx=0.75, rely=0.3)
+        name_entry.place(relx=0.75, rely=0.35)
 
         self.vid = cv2.VideoCapture(video_source, cv2.CAP_DSHOW)
         self.face_cascade = cv2.CascadeClassifier('cascades/data/haarcascade_frontalface_alt2.xml')
 
         # Refresh interval
         self.interval = 20
-        self.canvas = tk.Canvas(self, width=900, height=400)
-        self.canvas.pack()
+
+        self.canvas = tk.Canvas(self, width=700, height=400)
+        self.canvas.place(relx=0.01, rely=0.05)
         self.key_receiver()
 
     def key_receiver(self):
@@ -210,7 +245,6 @@ class EkranRejestracja(tk.Frame):
         gray = cv2.cvtColor(vid_frame, cv2.COLOR_BGR2GRAY)
         faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.5, minNeighbors=3)
         for (x, y, w, h) in faces:
-
             roi_gray = gray[y:y + h, x:x + w]
             # Drawing rectangle around detected face
             stroke = 2
@@ -223,26 +257,14 @@ class EkranRejestracja(tk.Frame):
         self.image = PIL.Image.fromarray(self.image)  # to PIL format
         self.image = PIL.ImageTk.PhotoImage(self.image)  # to ImageTk format
 
-        print("Reg Page cv is on")
         # Update cam image
-        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.image)
+        self.canvas.create_image(325, 200, image=self.image)
         # Repeat every 'interval' ms
         if update_on_reg:
             self.canvas.after(self.interval, self.update_image)
 
-        # TODO:         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-        #                    TOP PRIO FOR NOW: HANDLE GUI
-        #               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-        # TODO:         IMPLEMENT TAKING AND SAVING PICTURES
-
-        # TODO:         IMPLEMENT ADDING NEW USER IN GUI
-        #                   ADD WIDGET FOR TEXT ENTRY (NAME)
-        #                   CREATE NEW FOLDER
-
-        # TODO:         AFTER TAKING PHOTOS IMPLEMENT TRAIN.PY
-
 
 app = AutoryzacjaApp()
+app.geometry("1024x576")
 app.mainloop()
 cv2.destroyAllWindows()
